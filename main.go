@@ -14,6 +14,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -25,6 +28,7 @@ func main() {
 
 	http.HandleFunc("/config", configHandler(config))
 	http.HandleFunc("/ping", pingHandler(config))
+	http.HandleFunc("/s3", s3Handler(config))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(w, index)
@@ -74,6 +78,20 @@ func pingHandler(config map[string]string) http.HandlerFunc {
 		if err != nil {
 			log.Fatal(err)
 		}
+	}
+}
+
+func s3Handler(config map[string]string) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		log.Default().Println("/s3")
+
+		sess := session.Must(session.NewSession())
+		svc := s3.New(sess, &aws.Config{
+			Region: aws.String("eu-central-1"),
+		})
+		out, err := svc.ListBuckets(nil)
+
+		log.Default().Printf("out: %+v - err: %+v\n", out, err)
 	}
 }
 
